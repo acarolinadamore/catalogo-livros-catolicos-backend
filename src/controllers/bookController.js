@@ -15,7 +15,20 @@ export async function listBooks(req, res) {
     const { data, error, count } = await supabase
       .from('books')
       .select(`
-        *,
+        id,
+        catalog_id,
+        title,
+        author,
+        publisher,
+        publication_year,
+        category,
+        description,
+        isbn,
+        cover_image_url,
+        index_text,
+        tags,
+        created_at,
+        updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
       `, { count: 'exact' })
       .eq('catalog.is_public', true)
@@ -24,9 +37,15 @@ export async function listBooks(req, res) {
 
     if (error) throw error;
 
+    // Mapear cover_image_url para cover_url para compatibilidade com frontend
+    const mappedData = (data || []).map(book => ({
+      ...book,
+      cover_url: book.cover_image_url
+    }));
+
     res.json({
       success: true,
-      data: data || [],
+      data: mappedData,
       pagination: {
         total: count,
         limit: parseInt(limit),
@@ -52,7 +71,20 @@ export async function getBookById(req, res) {
     const { data, error } = await supabase
       .from('books')
       .select(`
-        *,
+        id,
+        catalog_id,
+        title,
+        author,
+        publisher,
+        publication_year,
+        category,
+        description,
+        isbn,
+        cover_image_url,
+        index_text,
+        tags,
+        created_at,
+        updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
       `)
       .eq('id', id)
@@ -69,9 +101,15 @@ export async function getBookById(req, res) {
       throw error;
     }
 
+    // Mapear cover_image_url para cover_url
+    const mappedData = {
+      ...data,
+      cover_url: data.cover_image_url
+    };
+
     res.json({
       success: true,
-      data
+      data: mappedData
     });
   } catch (error) {
     console.error('Erro ao buscar livro:', error);
@@ -92,7 +130,20 @@ export async function getRecentBooks(req, res) {
     const { data, error } = await supabase
       .from('books')
       .select(`
-        *,
+        id,
+        catalog_id,
+        title,
+        author,
+        publisher,
+        publication_year,
+        category,
+        description,
+        isbn,
+        cover_image_url,
+        index_text,
+        tags,
+        created_at,
+        updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
       `)
       .eq('catalog.is_public', true)
@@ -101,9 +152,15 @@ export async function getRecentBooks(req, res) {
 
     if (error) throw error;
 
+    // Mapear cover_image_url para cover_url
+    const mappedData = (data || []).map(book => ({
+      ...book,
+      cover_url: book.cover_image_url
+    }));
+
     res.json({
       success: true,
-      data: data || []
+      data: mappedData
     });
   } catch (error) {
     console.error('Erro ao buscar livros recentes:', error);
@@ -244,6 +301,8 @@ export async function updateBook(req, res) {
     }
 
     // Atualizar livro no Supabase
+    console.log('Atualizando livro ID:', id, 'com capa_url:', capa_url);
+
     const { data, error } = await supabase
       .from('books')
       .update({
@@ -254,13 +313,15 @@ export async function updateBook(req, res) {
         category: categoria || null,
         description: descricao || null,
         isbn: isbn || null,
-        cover_url: capa_url || null,
+        cover_image_url: capa_url || null,
         index_text: indice || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select()
       .single();
+
+    console.log('Livro atualizado:', data);
 
     if (error) {
       if (error.code === 'PGRST116') {

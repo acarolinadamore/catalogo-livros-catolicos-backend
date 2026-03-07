@@ -28,7 +28,20 @@ export async function searchBooks(req, res) {
     let query = supabase
       .from('books')
       .select(`
-        *,
+        id,
+        catalog_id,
+        title,
+        author,
+        publisher,
+        publication_year,
+        category,
+        description,
+        isbn,
+        cover_image_url,
+        index_text,
+        tags,
+        created_at,
+        updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
       `, { count: 'exact' })
       .eq('catalog.is_public', true);
@@ -84,9 +97,15 @@ export async function searchBooks(req, res) {
 
     if (error) throw error;
 
+    // Mapear cover_image_url para cover_url
+    const mappedData = (data || []).map(book => ({
+      ...book,
+      cover_url: book.cover_image_url
+    }));
+
     res.json({
       success: true,
-      data: data || [],
+      data: mappedData,
       pagination: {
         total: count,
         limit: parseInt(limit),
