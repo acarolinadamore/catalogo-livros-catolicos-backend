@@ -20,7 +20,9 @@
       "Bash(xargs:*)",
       "Bash(findstr:*)",
       "Bash(node test-storage.js:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
