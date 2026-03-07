@@ -36,7 +36,6 @@ export async function searchBooks(req, res) {
         year,
         content_type,
         description,
-        isbn,
         cover_image_url,
         index_text,
         intercessors,
