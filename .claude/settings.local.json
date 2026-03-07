@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(dir:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm start)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(netstat:*)",
+      "Bash(awk:*)",
+      "Bash(xargs:*)",
+      "Bash(findstr:*)",
+      "Bash(node test-storage.js:*)",
+      "Bash(git rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
