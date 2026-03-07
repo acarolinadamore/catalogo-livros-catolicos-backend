@@ -161,6 +161,18 @@ export async function createBook(req, res) {
     }
 
     // Criar livro no Supabase
+    console.log('Tentando criar livro com os dados:', {
+      title: titulo,
+      author: autor,
+      publisher: editora || null,
+      year: ano ? parseInt(ano) : null,
+      content_type: categoria || null,
+      description: descricao || null,
+      cover_image_url: capa_url || null,
+      index_text: indice || null,
+      catalog_id: catalogId
+    });
+
     const { data, error } = await supabase
       .from('books')
       .insert([
@@ -168,11 +180,10 @@ export async function createBook(req, res) {
           title: titulo,
           author: autor,
           publisher: editora || null,
-          publication_year: ano ? parseInt(ano) : null,
-          category: categoria || null,
+          year: ano ? parseInt(ano) : null,
+          content_type: categoria || null,
           description: descricao || null,
-          isbn: isbn || null,
-          cover_url: capa_url || null,
+          cover_image_url: capa_url || null,
           index_text: indice || null,
           catalog_id: catalogId
         }
@@ -180,7 +191,17 @@ export async function createBook(req, res) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro detalhado do Supabase:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      throw error;
+    }
+
+    console.log('Livro criado com sucesso:', data);
 
     res.status(201).json({
       success: true,
