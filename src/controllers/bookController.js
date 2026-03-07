@@ -20,13 +20,14 @@ export async function listBooks(req, res) {
         title,
         author,
         publisher,
-        publication_year,
-        category,
+        year,
+        content_type,
         description,
         isbn,
         cover_image_url,
         index_text,
-        tags,
+        intercessors,
+        pastoral_uses,
         created_at,
         updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
@@ -37,10 +38,15 @@ export async function listBooks(req, res) {
 
     if (error) throw error;
 
-    // Mapear cover_image_url para cover_url para compatibilidade com frontend
+    // Mapear campos do schema original para nomes compatíveis com frontend
     const mappedData = (data || []).map(book => ({
       ...book,
-      cover_url: book.cover_image_url
+      publication_year: book.year,
+      category: book.content_type,
+      cover_url: book.cover_image_url,
+      tags: book.intercessors && book.pastoral_uses
+        ? [...(book.intercessors || []), ...(book.pastoral_uses || [])].join(', ')
+        : ''
     }));
 
     res.json({
@@ -76,13 +82,14 @@ export async function getBookById(req, res) {
         title,
         author,
         publisher,
-        publication_year,
-        category,
+        year,
+        content_type,
         description,
         isbn,
         cover_image_url,
         index_text,
-        tags,
+        intercessors,
+        pastoral_uses,
         created_at,
         updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
@@ -101,10 +108,15 @@ export async function getBookById(req, res) {
       throw error;
     }
 
-    // Mapear cover_image_url para cover_url
+    // Mapear campos do schema original para nomes compatíveis com frontend
     const mappedData = {
       ...data,
-      cover_url: data.cover_image_url
+      publication_year: data.year,
+      category: data.content_type,
+      cover_url: data.cover_image_url,
+      tags: data.intercessors && data.pastoral_uses
+        ? [...(data.intercessors || []), ...(data.pastoral_uses || [])].join(', ')
+        : ''
     };
 
     res.json({
@@ -135,13 +147,14 @@ export async function getRecentBooks(req, res) {
         title,
         author,
         publisher,
-        publication_year,
-        category,
+        year,
+        content_type,
         description,
         isbn,
         cover_image_url,
         index_text,
-        tags,
+        intercessors,
+        pastoral_uses,
         created_at,
         updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
@@ -152,10 +165,15 @@ export async function getRecentBooks(req, res) {
 
     if (error) throw error;
 
-    // Mapear cover_image_url para cover_url
+    // Mapear campos do schema original para nomes compatíveis com frontend
     const mappedData = (data || []).map(book => ({
       ...book,
-      cover_url: book.cover_image_url
+      publication_year: book.year,
+      category: book.content_type,
+      cover_url: book.cover_image_url,
+      tags: book.intercessors && book.pastoral_uses
+        ? [...(book.intercessors || []), ...(book.pastoral_uses || [])].join(', ')
+        : ''
     }));
 
     res.json({
@@ -309,8 +327,8 @@ export async function updateBook(req, res) {
         title: titulo,
         author: autor,
         publisher: editora || null,
-        publication_year: ano ? parseInt(ano) : null,
-        category: categoria || null,
+        year: ano ? parseInt(ano) : null,
+        content_type: categoria || null,
         description: descricao || null,
         isbn: isbn || null,
         cover_image_url: capa_url || null,

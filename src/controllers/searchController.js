@@ -33,13 +33,14 @@ export async function searchBooks(req, res) {
         title,
         author,
         publisher,
-        publication_year,
-        category,
+        year,
+        content_type,
         description,
         isbn,
         cover_image_url,
         index_text,
-        tags,
+        intercessors,
+        pastoral_uses,
         created_at,
         updated_at,
         catalog:catalogs!inner(id, name, slug, is_public)
@@ -97,10 +98,15 @@ export async function searchBooks(req, res) {
 
     if (error) throw error;
 
-    // Mapear cover_image_url para cover_url
+    // Mapear campos do schema original para nomes compatíveis com frontend
     const mappedData = (data || []).map(book => ({
       ...book,
-      cover_url: book.cover_image_url
+      publication_year: book.year,
+      category: book.content_type,
+      cover_url: book.cover_image_url,
+      tags: book.intercessors && book.pastoral_uses
+        ? [...(book.intercessors || []), ...(book.pastoral_uses || [])].join(', ')
+        : ''
     }));
 
     res.json({
