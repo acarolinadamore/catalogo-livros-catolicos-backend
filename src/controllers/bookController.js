@@ -214,7 +214,8 @@ export async function createBook(req, res) {
       isbn,
       capa_url,
       indice,
-      catalog_id
+      catalog_id,
+      tags
     } = req.body;
 
     // Validação básica
@@ -245,6 +246,12 @@ export async function createBook(req, res) {
       catalogId = catalogs.id;
     }
 
+    // Processar tags: converter string em array
+    let tagsArray = [];
+    if (tags && typeof tags === 'string' && tags.trim()) {
+      tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    }
+
     // Criar livro no Supabase
     console.log('Tentando criar livro com os dados:', {
       title: titulo,
@@ -255,7 +262,8 @@ export async function createBook(req, res) {
       description: descricao || null,
       cover_image_url: capa_url || null,
       index_text: indice || null,
-      catalog_id: catalogId
+      catalog_id: catalogId,
+      intercessors: tagsArray.length > 0 ? tagsArray : null
     });
 
     const { data, error } = await supabase
@@ -270,7 +278,8 @@ export async function createBook(req, res) {
           description: descricao || null,
           cover_image_url: capa_url || null,
           index_text: indice || null,
-          catalog_id: catalogId
+          catalog_id: catalogId,
+          intercessors: tagsArray.length > 0 ? tagsArray : null
         }
       ])
       .select()
@@ -317,7 +326,8 @@ export async function updateBook(req, res) {
       descricao,
       isbn,
       capa_url,
-      indice
+      indice,
+      tags
     } = req.body;
 
     // Validação básica
@@ -326,6 +336,12 @@ export async function updateBook(req, res) {
         success: false,
         error: 'Título e autor são obrigatórios'
       });
+    }
+
+    // Processar tags: converter string em array
+    let tagsArray = [];
+    if (tags && typeof tags === 'string' && tags.trim()) {
+      tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
     }
 
     // Atualizar livro no Supabase
@@ -342,6 +358,7 @@ export async function updateBook(req, res) {
         description: descricao || null,
         cover_image_url: capa_url || null,
         index_text: indice || null,
+        intercessors: tagsArray.length > 0 ? tagsArray : null,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
