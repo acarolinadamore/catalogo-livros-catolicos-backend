@@ -387,3 +387,40 @@ export async function deleteBook(req, res) {
     });
   }
 }
+
+/**
+ * Limpar categoria de todos os livros que possuem uma categoria específica
+ */
+export async function clearCategoryFromBooks(req, res) {
+  try {
+    const { category } = req.body;
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        error: 'Categoria é obrigatória'
+      });
+    }
+
+    // Atualizar todos os livros que têm essa categoria, setando content_type como null
+    const { data, error } = await supabase
+      .from('books')
+      .update({ content_type: null })
+      .eq('content_type', category)
+      .select();
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      message: `Categoria removida de ${data?.length || 0} livro(s)`,
+      affected_count: data?.length || 0
+    });
+  } catch (error) {
+    console.error('Erro ao limpar categoria:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao limpar categoria dos livros'
+    });
+  }
+}

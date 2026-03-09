@@ -9,7 +9,8 @@ import {
   getRecentBooks,
   createBook,
   updateBook,
-  deleteBook
+  deleteBook,
+  clearCategoryFromBooks
 } from '../controllers/bookController.js';
 
 const router = express.Router();
@@ -22,6 +23,9 @@ router.get('/recent', getRecentBooks);
 
 // POST /api/books - Criar novo livro
 router.post('/', createBook);
+
+// POST /api/books/clear-category - Limpar categoria de livros
+router.post('/clear-category', clearCategoryFromBooks);
 
 // GET /api/books/:id - Buscar livro por ID
 router.get('/:id', getBookById);
