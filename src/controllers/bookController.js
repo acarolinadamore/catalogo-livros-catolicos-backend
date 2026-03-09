@@ -38,15 +38,20 @@ export async function listBooks(req, res) {
     if (error) throw error;
 
     // Mapear campos do schema original para nomes compatíveis com frontend
-    const mappedData = (data || []).map(book => ({
-      ...book,
-      publication_year: book.year,
-      category: book.content_type,
-      cover_url: book.cover_image_url,
-      tags: book.intercessors && book.pastoral_uses
-        ? [...(book.intercessors || []), ...(book.pastoral_uses || [])].join(', ')
-        : ''
-    }));
+    const mappedData = (data || []).map(book => {
+      const allTags = [
+        ...(book.intercessors || []),
+        ...(book.pastoral_uses || [])
+      ].filter(tag => tag && tag.trim());
+
+      return {
+        ...book,
+        publication_year: book.year,
+        category: book.content_type,
+        cover_url: book.cover_image_url,
+        tags: allTags.length > 0 ? allTags.join(', ') : ''
+      };
+    });
 
     res.json({
       success: true,
@@ -107,14 +112,17 @@ export async function getBookById(req, res) {
     }
 
     // Mapear campos do schema original para nomes compatíveis com frontend
+    const allTags = [
+      ...(data.intercessors || []),
+      ...(data.pastoral_uses || [])
+    ].filter(tag => tag && tag.trim());
+
     const mappedData = {
       ...data,
       publication_year: data.year,
       category: data.content_type,
       cover_url: data.cover_image_url,
-      tags: data.intercessors && data.pastoral_uses
-        ? [...(data.intercessors || []), ...(data.pastoral_uses || [])].join(', ')
-        : ''
+      tags: allTags.length > 0 ? allTags.join(', ') : ''
     };
 
     res.json({
@@ -163,15 +171,20 @@ export async function getRecentBooks(req, res) {
     if (error) throw error;
 
     // Mapear campos do schema original para nomes compatíveis com frontend
-    const mappedData = (data || []).map(book => ({
-      ...book,
-      publication_year: book.year,
-      category: book.content_type,
-      cover_url: book.cover_image_url,
-      tags: book.intercessors && book.pastoral_uses
-        ? [...(book.intercessors || []), ...(book.pastoral_uses || [])].join(', ')
-        : ''
-    }));
+    const mappedData = (data || []).map(book => {
+      const allTags = [
+        ...(book.intercessors || []),
+        ...(book.pastoral_uses || [])
+      ].filter(tag => tag && tag.trim());
+
+      return {
+        ...book,
+        publication_year: book.year,
+        category: book.content_type,
+        cover_url: book.cover_image_url,
+        tags: allTags.length > 0 ? allTags.join(', ') : ''
+      };
+    });
 
     res.json({
       success: true,
