@@ -7,7 +7,7 @@ import multer from 'multer';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { processBookCoverOCR } from '../controllers/ocrController.js';
+import { processBookCoverOCR, processIndexOCR } from '../controllers/ocrController.js';
 
 const router = express.Router();
 
@@ -50,5 +50,11 @@ const upload = multer({
  * Analisa capa de livro e extrai informações usando Claude Vision
  */
 router.post('/analyze-cover', upload.single('image'), processBookCoverOCR);
+
+/**
+ * POST /api/ocr/transcribe-index
+ * Transcreve literalmente o texto de uma página de índice/sumário
+ */
+router.post('/transcribe-index', upload.single('image'), processIndexOCR);
 
 export default router;

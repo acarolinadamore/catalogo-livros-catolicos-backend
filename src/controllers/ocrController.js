@@ -1,6 +1,6 @@
 /**
  * Controlador de OCR com Claude API Vision
- * Analisa capas de livros usando Claude Vision para extrair informações
+ * Analisa capas de livros e transcreve índices usando Claude Vision
  */
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -8,6 +8,7 @@ import fs from 'fs';
 
 /**
  * Processar OCR de capa de livro usando Claude API Vision
+ * Extrai informações estruturadas (título, autor, editora, ano)
  */
 export async function processBookCoverOCR(req, res) {
   try {
@@ -172,6 +173,154 @@ Formato de resposta esperado:
     res.status(500).json({
       success: false,
       error: 'Erro ao analisar imagem. Por favor, tente novamente.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
+/**
+ * Processar OCR de índice/sumário usando Claude API Vision
+ * Transcreve LITERALMENTE todo o texto visível na imagem
+ */
+export async function processIndexOCR(req, res) {
+  try {
+    // Verificar se arquivo foi enviado
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhuma imagem foi enviada'
+      });
+    }
+
+    // Verificar se a chave da API está configurada
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('ANTHROPIC_API_KEY não configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'Serviço de OCR não configurado'
+      });
+    }
+
+    // Ler arquivo e converter para base64
+    const imageBuffer = fs.readFileSync(req.file.path);
+    const base64Image = imageBuffer.toString('base64');
+
+    // Detectar tipo MIME da imagem
+    let mediaType = 'image/jpeg';
+    if (req.file.mimetype === 'image/png') {
+      mediaType = 'image/png';
+    } else if (req.file.mimetype === 'image/webp') {
+      mediaType = 'image/webp';
+    } else if (req.file.mimetype === 'image/gif') {
+      mediaType = 'image/gif';
+    }
+
+    console.log('Processando transcrição de índice com Claude Vision:', {
+      filename: req.file.filename,
+      size: req.file.size,
+      mediaType
+    });
+
+    // Inicializar cliente Anthropic
+    const anthropic = new Anthropic({
+      apiKey: apiKey
+    });
+
+    // Prompt otimizado para TRANSCRIÇÃO LITERAL de texto
+    const prompt = `Você deve transcrever EXATAMENTE todo o texto visível nesta imagem de índice/sumário de livro.
+
+INSTRUÇÕES IMPORTANTES:
+- Transcreva TODO o texto que você vê, palavra por palavra
+- Mantenha a formatação original (quebras de linha, pontos, travessões, etc)
+- Mantenha os números de página exatamente como aparecem
+- NÃO analise, NÃO interprete, NÃO resuma - apenas COPIE o texto
+- Se houver "Sumário", "Índice", "Capítulo", "Parte", etc, copie exatamente
+- Copie os títulos dos capítulos/seções exatamente como estão escritos
+- Copie os números de página com os pontos/travessões/espaços originais
+- Se algo não estiver legível, indique com [ilegível]
+
+Exemplo do que você DEVE fazer:
+Se a imagem mostra:
+"Sumário
+Capítulo 1 - Introdução ........................ 5
+Capítulo 2 - Desenvolvimento ................... 12"
+
+Você deve retornar EXATAMENTE:
+"Sumário
+Capítulo 1 - Introdução ........................ 5
+Capítulo 2 - Desenvolvimento ................... 12"
+
+IMPORTANTE: Retorne APENAS o texto transcrito, sem nenhum comentário adicional, sem "```", sem explicações. Apenas o texto puro.`;
+
+    // Chamar Claude API com Vision
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096, // Aumentado para permitir transcrições longas
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64Image
+              }
+            },
+            {
+              type: 'text',
+              text: prompt
+            }
+          ]
+        }
+      ]
+    });
+
+    // Extrair resposta (texto transcrito)
+    const transcribedText = message.content[0].text.trim();
+    console.log('Texto transcrito do índice:', transcribedText);
+
+    // Limpar arquivo temporário
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (unlinkError) {
+      console.error('Erro ao deletar arquivo temporário:', unlinkError);
+    }
+
+    // Validar se encontrou algum texto
+    if (!transcribedText || transcribedText.length < 5) {
+      return res.status(200).json({
+        success: false,
+        error: 'Não foi possível transcrever o texto da imagem. Tente uma foto mais nítida.',
+        data: null
+      });
+    }
+
+    // Retornar texto transcrito
+    res.json({
+      success: true,
+      data: {
+        text: transcribedText
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao processar transcrição de índice:', error);
+
+    // Limpar arquivo temporário em caso de erro
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        // Ignorar erro de cleanup
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao transcrever texto. Por favor, tente novamente.',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
