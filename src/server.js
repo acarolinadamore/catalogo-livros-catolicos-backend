@@ -11,6 +11,7 @@ import catalogRoutes from './routes/catalogs.js';
 import bookRoutes from './routes/books.js';
 import searchRoutes from './routes/search.js';
 import uploadRoutes from './routes/upload.js';
+import ocrRoutes from './routes/ocr.js';
 
 dotenv.config();
 
@@ -71,7 +72,8 @@ app.get('/', (req, res) => {
       catalogs: '/api/catalogs',
       books: '/api/books',
       search: '/api/search',
-      upload: '/api/upload'
+      upload: '/api/upload',
+      ocr: '/api/ocr'
     }
   });
 });
@@ -81,6 +83,7 @@ app.use('/api/catalogs', catalogRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/ocr', ocrRoutes);
 
 // Rota 404
 app.use((req, res) => {
