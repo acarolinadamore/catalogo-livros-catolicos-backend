@@ -80,7 +80,7 @@ Formato de resposta esperado:
 
     // Chamar Claude API com Vision
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20240620', // Modelo Claude 3.5 Sonnet com vision
+      model: 'claude-3-opus-20240229', // Claude 3 Opus - modelo mais poderoso com vision
       max_tokens: 1024,
       messages: [
         {
