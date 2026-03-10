@@ -251,7 +251,7 @@ Você deve retornar EXATAMENTE:
 Capítulo 1 - Introdução ........................ 5
 Capítulo 2 - Desenvolvimento ................... 12"
 
-IMPORTANTE: Retorne APENAS o texto transcrito, sem nenhum comentário adicional, sem "```", sem explicações. Apenas o texto puro.`;
+IMPORTANTE: Retorne APENAS o texto transcrito, sem nenhum comentário adicional, sem blocos de código markdown, sem explicações. Apenas o texto puro.`;
 
     // Chamar Claude API com Vision
     const message = await anthropic.messages.create({
