@@ -5,6 +5,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs';
+import { supabase } from '../config/supabase.js';
 
 /**
  * Processar OCR de capa de livro usando Claude API Vision
@@ -321,6 +322,97 @@ IMPORTANTE: Retorne APENAS o texto transcrito, sem nenhum comentário adicional,
     res.status(500).json({
       success: false,
       error: 'Erro ao transcrever texto. Por favor, tente novamente.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
+/**
+ * Verificar se livro já existe no banco de dados
+ * Busca por título e autor similares para detectar duplicatas
+ */
+export async function checkDuplicateBook(req, res) {
+  try {
+    const { titulo, autor } = req.body;
+
+    // Validação básica
+    if (!titulo || !autor) {
+      return res.status(400).json({
+        success: false,
+        error: 'Título e autor são obrigatórios'
+      });
+    }
+
+    console.log('Verificando duplicatas para:', { titulo, autor });
+
+    // Normalizar strings para comparação (remover acentos, converter para minúsculas)
+    const normalizeString = (str) => {
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .trim();
+    };
+
+    const tituloNormalizado = normalizeString(titulo);
+    const autorNormalizado = normalizeString(autor);
+
+    // Buscar livros no banco
+    const { data: books, error } = await supabase
+      .from('books')
+      .select('id, title, author, publisher, year, cover_image_url, content_type')
+      .ilike('title', `%${titulo}%`); // Busca case-insensitive
+
+    if (error) {
+      console.error('Erro ao buscar livros:', error);
+      throw error;
+    }
+
+    // Filtrar resultados para encontrar correspondências exatas ou muito próximas
+    const duplicates = books.filter(book => {
+      const bookTituloNormalizado = normalizeString(book.title);
+      const bookAutorNormalizado = normalizeString(book.author || '');
+
+      // Verificar se título e autor são muito similares
+      const tituloMatch = bookTituloNormalizado.includes(tituloNormalizado) ||
+                          tituloNormalizado.includes(bookTituloNormalizado);
+      const autorMatch = bookAutorNormalizado.includes(autorNormalizado) ||
+                         autorNormalizado.includes(bookAutorNormalizado);
+
+      return tituloMatch && autorMatch;
+    });
+
+    if (duplicates.length > 0) {
+      // Livro duplicado encontrado
+      const duplicate = duplicates[0]; // Pegar o primeiro resultado
+
+      return res.json({
+        success: true,
+        isDuplicate: true,
+        data: {
+          id: duplicate.id,
+          titulo: duplicate.title,
+          autor: duplicate.author,
+          editora: duplicate.publisher,
+          ano: duplicate.year,
+          capa_url: duplicate.cover_image_url,
+          categoria: duplicate.content_type
+        }
+      });
+    }
+
+    // Nenhum duplicado encontrado
+    res.json({
+      success: true,
+      isDuplicate: false,
+      data: null
+    });
+
+  } catch (error) {
+    console.error('Erro ao verificar duplicatas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao verificar duplicatas',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
