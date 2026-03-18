@@ -417,3 +417,96 @@ export async function checkDuplicateBook(req, res) {
     });
   }
 }
+
+/**
+ * Gerar descrição do livro usando Claude AI
+ * Cria uma descrição breve e resumida baseada nas informações fornecidas
+ */
+export async function generateBookDescription(req, res) {
+  try {
+    const { titulo, autor, editora, ano, categoria } = req.body;
+
+    // Validação básica
+    if (!titulo) {
+      return res.status(400).json({
+        success: false,
+        error: 'Título é obrigatório para gerar descrição'
+      });
+    }
+
+    // Verificar se a chave da API está configurada
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('ANTHROPIC_API_KEY não configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'Serviço de geração de descrição não configurado'
+      });
+    }
+
+    console.log('Gerando descrição para livro:', { titulo, autor, editora, ano, categoria });
+
+    // Inicializar cliente Anthropic
+    const anthropic = new Anthropic({
+      apiKey: apiKey
+    });
+
+    // Construir contexto do livro
+    let contexto = `Título: ${titulo}`;
+    if (autor) contexto += `\nAutor: ${autor}`;
+    if (editora) contexto += `\nEditora: ${editora}`;
+    if (ano) contexto += `\nAno: ${ano}`;
+    if (categoria) contexto += `\nCategoria: ${categoria}`;
+
+    // Prompt otimizado para gerar descrição breve
+    const prompt = `Com base nas informações abaixo sobre um livro católico, escreva uma descrição breve, sucinta e objetiva (máximo 3-4 frases) que possa ser usada em um catálogo de biblioteca.
+
+${contexto}
+
+INSTRUÇÕES:
+- Escreva em português brasileiro
+- Seja conciso e direto (máximo 3-4 frases)
+- Foque no conteúdo e propósito do livro
+- Use linguagem simples e acessível
+- Se o livro/autor for conhecido, mencione sua relevância
+- Se não conhecer o livro, crie uma descrição genérica baseada na categoria
+- NÃO invente detalhes que você não sabe
+- NÃO use aspas ou formatação markdown
+- Retorne APENAS o texto da descrição, sem prefixos como "Descrição:" ou comentários adicionais
+
+Exemplo de descrição boa:
+"Este livro oferece uma reflexão profunda sobre a espiritualidade cristã, combinando ensinamentos bíblicos com experiências práticas de oração. Ideal para quem busca aprofundar sua vida de fé e fortalecer o relacionamento com Deus. Uma leitura edificante e transformadora."`;
+
+    // Chamar Claude API
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 512,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
+
+    // Extrair descrição
+    const descricao = message.content[0].text.trim();
+    console.log('Descrição gerada:', descricao);
+
+    // Retornar descrição
+    res.json({
+      success: true,
+      data: {
+        descricao
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao gerar descrição:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao gerar descrição. Por favor, tente novamente.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}

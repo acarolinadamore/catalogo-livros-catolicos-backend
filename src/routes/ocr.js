@@ -7,7 +7,7 @@ import multer from 'multer';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { processBookCoverOCR, processIndexOCR, checkDuplicateBook } from '../controllers/ocrController.js';
+import { processBookCoverOCR, processIndexOCR, checkDuplicateBook, generateBookDescription } from '../controllers/ocrController.js';
 
 const router = express.Router();
 
@@ -62,5 +62,11 @@ router.post('/transcribe-index', upload.single('image'), processIndexOCR);
  * Verifica se livro já existe no banco de dados (por título e autor)
  */
 router.post('/check-duplicate', checkDuplicateBook);
+
+/**
+ * POST /api/ocr/generate-description
+ * Gera descrição breve do livro usando Claude AI
+ */
+router.post('/generate-description', generateBookDescription);
 
 export default router;
