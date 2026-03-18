@@ -14,6 +14,7 @@ export async function searchBooks(req, res) {
   try {
     const {
       q = '',                    // Query de busca textual
+      index_search = '',         // Query de busca específica no índice
       content_type,              // Filtro: tipo de conteúdo
       intercessor,               // Filtro: intercessor
       pastoral_use,              // Filtro: uso pastoral
@@ -46,18 +47,24 @@ export async function searchBooks(req, res) {
       `, { count: 'exact' })
       .eq('catalog.is_public', true);
 
-    // Aplicar busca textual (título, autor, descrição, índice)
+    // Aplicar busca textual (título, autor, descrição)
+    // NOTA: índice NÃO é incluído na busca geral - apenas em busca específica
     if (q && q.trim()) {
       const searchTerm = q.trim();
 
       // Busca usando Full Text Search do PostgreSQL
-      // Busca em múltiplos campos: título, autor, descrição, índice
+      // Busca em múltiplos campos: título, autor, descrição
       query = query.or(
         `title.ilike.%${searchTerm}%,` +
         `author.ilike.%${searchTerm}%,` +
-        `description.ilike.%${searchTerm}%,` +
-        `index_text.ilike.%${searchTerm}%`
+        `description.ilike.%${searchTerm}%`
       );
+    }
+
+    // Busca específica no índice (separada da busca geral)
+    if (index_search && index_search.trim()) {
+      const indexSearchTerm = index_search.trim();
+      query = query.ilike('index_text', `%${indexSearchTerm}%`);
     }
 
     // Aplicar filtros estruturados
@@ -118,6 +125,7 @@ export async function searchBooks(req, res) {
       },
       filters: {
         query: q,
+        index_search,
         content_type,
         intercessor,
         pastoral_use,
